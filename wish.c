@@ -21,7 +21,17 @@ char* getCommand(void)
 	// Read user input from CLI
 	size_t size = 0;
 	char* line = NULL;
-	getline(&line, &size, (INTERACTIVE) ? stdin : BATCH_FILE);
+	// getline(&line, &size, (INTERACTIVE) ? stdin : BATCH_FILE);
+	// Tokenize the command
+	line = strdup("this is a test command to tokenize");
+	char* token = NULL;
+	char* to_process = strdup(line);
+	while ( (token = strsep(&to_process, " ")) != NULL)
+	{
+		printf("%s\n", token);
+	}
+
+
 	return line;
 }
 
