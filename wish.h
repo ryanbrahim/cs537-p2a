@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 // Global Constants
+#define DEBUG true
 const size_t MAX_LINE_LENGTH = 256;
 const bool INTERACTIVE = true;
 

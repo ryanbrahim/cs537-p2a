@@ -30,6 +30,9 @@ char* getCommand(void)
 
 int main()
 {
+	if (DEBUG)
+		setvbuf(stdout, NULL, _IONBF, 0); // turn off buffering for stdout
+
 	// Main shell loop
 	while (1)
 	{
