@@ -2,6 +2,9 @@
 #ifndef WISH_H
 #define WISH_H
 
+// Includes
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 // Global Constants
