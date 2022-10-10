@@ -10,15 +10,16 @@
 
 // Global Constants
 #define DEBUG true
-const size_t MAX_LINE_LENGTH = 256;
+const size_t MAX_LINE_LENGTH = 512;
+const int MAX_NUM_TOKENS = 512;
 const bool INTERACTIVE = true;
 
 // Global variables
-char* BATCH_FILE = NULL;
+FILE* INPUT_FILE;
 
 // Function headers
 void prompt(void);
-char* getCommand(void);
+int getCommand(char* tokens[]);
 
 
 #endif
