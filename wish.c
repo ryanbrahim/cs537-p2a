@@ -82,14 +82,13 @@ int getTokens(char* tokens[])
  * 	Returns:
  * 		true if valid command, false otherwise
  */
-bool parseCommand(char* tokens[], int num_tokens, char command[], char* argv[])
+bool parseCommand(char* tokens[], int num_tokens, char command[], char* args[])
 {
-	char* args[num_tokens-1];
+	command = tokens[0];
+	args = malloc( sizeof(char*) * (num_tokens-1) );
 	int i;
 	for(i = 1; i < num_tokens; i++)
 		args[i-1] = tokens[i];
-	command = tokens[0];
-	argv = args;
 	return true;
 }
 
@@ -134,13 +133,13 @@ int main(int argc, char *argv[])
 		int num_tokens = getTokens(tokens);
 		// Parse tokens into valid command
 		char* command;
-		char** args;
+		char* command_args[];
 
 
-		if(parseCommand(tokens, num_tokens, command, args))
+		if(parseCommand(tokens, num_tokens, command, command_args))
 		{
 			// Execute that command
-			executeCommand(tokens, num_tokens);
+			executeCommand(command, command_args);
 		}
 
 		
