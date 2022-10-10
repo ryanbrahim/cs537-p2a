@@ -26,7 +26,14 @@ int getCommand(char* tokens[])
 	// Get line of input
 	size_t size = 0;
 	char* line = NULL;
-	getline(&line, &size, INPUT_FILE);
+	int chars_read = getline(&line, &size, INPUT_FILE);
+
+	// Hit end of file?
+	if(chars_read == -1)
+	{
+		tokens[0] = "exit";
+		return 1;
+	}
 
 	// Tokenize the command
 	char* token = NULL;
@@ -81,9 +88,7 @@ int main(int argc, char *argv[])
 		
 
 	// Main shell loop
-	// while (1)
-	int loop;
-	for (loop = 0; loop < 4; loop++)
+	while (1)
 	{
 		// Get next command
 		char *tokens[MAX_NUM_TOKENS];
@@ -92,8 +97,10 @@ int main(int argc, char *argv[])
 		// Display parsed tokens
 		for (int i = 0; i < num_tokens; i++)
 		{
-			if(tokens[i] == NULL)
-				break;
+			// Exit condition
+			if(strcmp(tokens[i], "exit") == 0)
+				exit(0);
+
 			printf("%s ", tokens[i]);
 		}
 		printf("\n");
