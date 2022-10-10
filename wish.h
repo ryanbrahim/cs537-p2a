@@ -19,8 +19,9 @@ FILE* INPUT_FILE;
 
 // Function headers
 void prompt(void);
-int getCommand(char* tokens[]);
-
+int getTokens(char* tokens[]);
+bool parseCommand(char* tokens[], int num_tokens, char command[], char* argv[]);
+void executeCommand(char command[], char* args[]);
 
 #endif
 

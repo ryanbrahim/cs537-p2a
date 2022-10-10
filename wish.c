@@ -17,7 +17,7 @@ void prompt()
  * 	Returns:
  * 		The number of tokens
  **/
-int getCommand(char* tokens[])
+int getTokens(char* tokens[])
 {
 	// Display shell prompt if interactive mode
 	if (INPUT_FILE == stdin)
@@ -71,7 +71,46 @@ int getCommand(char* tokens[])
 	return i;
 }
 
+/**
+ * 	Parse tokens into a valid command (if possible)
+ * 
+ * 	Parameters:
+ * 		char* tokens[] - an array of command tokens
+ * 		int num_tokens - the number of tokens
+ * 
+ * 
+ * 	Returns:
+ * 		true if valid command, false otherwise
+ */
+bool parseCommand(char* tokens[], int num_tokens, char command[], char* argv[])
+{
+	char* args[num_tokens-1];
+	int i;
+	for(i = 1; i < num_tokens; i++)
+		args[i-1] = tokens[i];
+	command = tokens[0];
+	argv = args;
+	return true;
+}
 
+/**
+ * 	Execute a command.
+ * 
+ * 	Parameters:
+ * 		char command[] - the command
+ * 		char* args[] - the command's arguments
+ */
+void executeCommand(char command[], char* args[])
+{
+
+	// Exit condition
+	if(strcmp(command, "exit") == 0)
+		exit(0);
+
+	// Different command?
+	printf("The command is : %s\n", command);
+
+}
 
 
 int main(int argc, char *argv[])
@@ -90,20 +129,28 @@ int main(int argc, char *argv[])
 	// Main shell loop
 	while (1)
 	{
-		// Get next command
+		// Get tokens from next line
 		char *tokens[MAX_NUM_TOKENS];
-		int num_tokens = getCommand(tokens);
+		int num_tokens = getTokens(tokens);
+		// Parse tokens into valid command
+		char* command;
+		char** args;
 
-		// Display parsed tokens
-		for (int i = 0; i < num_tokens; i++)
+
+		if(parseCommand(tokens, num_tokens, command, args))
 		{
-			// Exit condition
-			if(strcmp(tokens[i], "exit") == 0)
-				exit(0);
-
-			printf("%s ", tokens[i]);
+			// Execute that command
+			executeCommand(tokens, num_tokens);
 		}
-		printf("\n");
+
+		
+
+		// // Display parsed tokens
+		// for (int i = 0; i < num_tokens; i++)
+		// {
+		// 	printf("%s ", tokens[i]);
+		// }
+		// printf("\n");
 	}
 	return 0;
 }

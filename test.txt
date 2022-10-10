@@ -1,3 +1,4 @@
+exit 1 2 ls
 ls . > output1.txt
 ls .>output2.txt
 ls .> output3.txt
