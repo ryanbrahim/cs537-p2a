@@ -69,9 +69,11 @@ int getCommand(char* tokens[])
 
 int main(int argc, char *argv[])
 {
+	// Disable the stdout buffer for debugging
 	if (DEBUG)
-		setvbuf(stdout, NULL, _IONBF, 0); // turn off buffering for stdout
+		setvbuf(stdout, NULL, _IONBF, 0);
 	
+	// Determine whether we are in interactive mode
 	if (argc <= 1)
 		INPUT_FILE = stdin;
 	else
