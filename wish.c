@@ -197,6 +197,13 @@ void executeCommand(char* tokens[], int num_tokens)
 
 int main(int argc, char *argv[])
 {
+	// ERROR: Passed more than one file
+	if ( argc >= 3 )
+		exit(1);
+	// ERROR: Bad batch file
+	if ( argc == 2 &&  access(argv[1], R_OK) != 0)
+		exit(1);
+
 	// Disable the stdout buffer for debugging
 	if (DEBUG)
 		setvbuf(stdout, NULL, _IONBF, 0);
