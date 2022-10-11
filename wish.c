@@ -88,10 +88,23 @@ int getTokens(char* tokens[])
 	return i;
 }
 
+
+/**
+ * 	exit built-in
+*/
+builtin_exit(char* tokens[], int num_tokens)
+{
+	if(num_tokens > 1)
+		error();
+	else	
+		exit(0);
+}
+
+
 /**
  * cd build-in function.  Changes directory
 */
-void cd(char* tokens[], int num_tokens)
+void builtin_cd(char* tokens[], int num_tokens)
 {
 	// Error checking
 	if (num_tokens != 2)
@@ -110,12 +123,50 @@ void cd(char* tokens[], int num_tokens)
  * 		tokens[] - the command tokens
  * 		int num_tokens - the number of tokens
 */
-void path(char* tokens[], int num_tokens)
+void builtin_path(char* tokens[], int num_tokens)
 {
 	int new_paths = num_tokens - 1;
 	for (int i = 0; i < new_paths; i++)
 		BIN_PATHS[i] = tokens[1+i]; 
 	NUM_PATHS = new_paths;
+}
+
+
+/**
+ *  Handles redirection by updating the stdout file
+ *  	to a provided file.  The provided file is the token
+ * 		immediately after the redirect index.
+ * 
+ * 	Returns true if handled, false if not
+*/
+bool handleRedirect(char* tokens[], int num_tokens, int redirect_index)
+{
+	// ERROR: Trying to redirect, but no (or too many) output file given
+	if ( redirect_index + 1 != num_tokens - 1 )
+	{
+		error();
+		return false;
+	}
+
+	char* output_file = tokens[redirect_index+1];
+	int fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    dup2(fd, fileno(stdout));
+    close(fd);  
+	return true;
+}
+
+
+COMMAND_T determineCommand(char* tokens[], int num_tokens)
+{
+	char* command = tokens[0];
+	if ( strcmp(command,strdup("exit")) == 0 
+			|| strcmp(command,strdup("cd")) == 0 
+			|| strcmp(command,strdup("path")) == 0 )
+	{
+		return BUILTIN;
+	}
+
+	
 }
 
 
@@ -128,27 +179,47 @@ void path(char* tokens[], int num_tokens)
 void executeCommand(char* tokens[], int num_tokens)
 {
 	// Local string vars
-	char prog_path[MAX_PATH_LENGTH] = "";
+	// char prog_path[MAX_PATH_LENGTH] = "";
+	char* prog_path = malloc( sizeof(char) * MAX_PATH_LENGTH );
 
 	// Get the command and it's args
 	char* command = strdup(tokens[0]);
 	char** argv = malloc( sizeof(char*) * num_tokens + 1);
+	argv[0] = command;
+	int argc = 1;
+	bool is_redirect = false;
 	for (int i = 1; i < num_tokens; i++)
-		argv[i] = strdup(tokens[i]);
-	argv[num_tokens] = NULL;
+	{
+		char* token = strdup(tokens[i]);
+		// If we hit a redirect, handle redirect, and stop reading args
+		if ( strcmp(token, strdup(">")) == 0 )
+		{
+			is_redirect = true;
+			if (!handleRedirect(tokens, num_tokens, i))
+				return;
+			break;
+		}
+		// Add this token to the command args
+		argv[i] = token;
+		argc++;
+	}
+	argv[argc] = NULL;
 
 
 	// Check if built-in command
 	if(strcmp(command, "exit") == 0)
-		exit(0);
+	{
+		builtin_exit(tokens, num_tokens);
+		return;
+	}
 	if(strcmp(command, "cd") == 0)
 	{
-		cd(tokens, num_tokens);
+		builtin_cd(tokens, num_tokens);
 		return;
 	}
 	if(strcmp(command, "path") == 0)
 	{
-		path(tokens, num_tokens);
+		builtin_path(tokens, num_tokens);
 		return;
 	}
 
@@ -160,38 +231,29 @@ void executeCommand(char* tokens[], int num_tokens)
 		strcpy(prog_path, BIN_PATHS[i]);
 		strcat(prog_path, "/");
 		strcat(prog_path, command);
-		argv[0] = prog_path;
+		// argv[0] = prog_path;
 		// printf("Trying to access %s\n", prog_path);
 
 		// Check if that program path exists
 		if( access(prog_path, X_OK) == 0 )
 		{
-			// printf("Pre-executing %s\n", prog_path);
-			// printf("\targv =");
-			// for (int i = 0; i <= num_tokens; i++)
-					// printf(" %s", argv[i]);
-			// printf("\n");
-
-			// Execute that program!
-			// printf("Executing %s\n", prog_path);
-
 			pid_t pid = fork();
 			if( pid == 0 )
 			{
-				// printf("\tpid: %d\n", (int)pid);
-				// printf("\tprog_path: %s\n", prog_path);
-				// printf("\targv =");
-				// for (int i = 0; i <= num_tokens; i++)
-					// printf(" %s", argv[i]);
-				// printf("\n");
+				if(is_redirect)
+					handleRedirect;
 				execv(prog_path, argv);
 			}
 			int status;
 			waitpid(pid, &status, 0);
+			// Successfully ran program!  We can return now
+			return;
 		}
 		else
 			continue;
 	}
+	// Could not find program, error
+	error();
 }
 
 

@@ -21,6 +21,13 @@ const size_t MAX_LINE_LENGTH = 512;
 const int MAX_NUM_TOKENS = 512;
 const bool INTERACTIVE = true;
 
+typedef enum {
+    BUILTIN,
+    COMMAND,
+    REDIRECT,
+    IF
+} COMMAND_T;
+
 // Global variables
 FILE* INPUT_FILE;
 int NUM_PATHS;
@@ -33,8 +40,8 @@ void executeCommand(char* tokens[], int num_tokens);
 void error();
 
 // Builtins
-void cd(char* tokens[], int num_tokens);
-void path(char* tokens[], int num_tokens);
+void builtin_cd(char* tokens[], int num_tokens);
+void builtin_path(char* tokens[], int num_tokens);
 
 #endif
 
