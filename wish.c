@@ -71,44 +71,63 @@ int getTokens(char* tokens[])
 	return i;
 }
 
-/**
- * 	Parse tokens into a valid command (if possible)
- * 
- * 	Parameters:
- * 		char* tokens[] - an array of command tokens
- * 		int num_tokens - the number of tokens
- * 
- * 
- * 	Returns:
- * 		true if valid command, false otherwise
- */
-bool parseCommand(char* tokens[], int num_tokens, char command[], char* args[])
-{
-	command = tokens[0];
-	args = malloc( sizeof(char*) * (num_tokens-1) );
-	int i;
-	for(i = 1; i < num_tokens; i++)
-		args[i-1] = tokens[i];
-	return true;
-}
 
 /**
  * 	Execute a command.
  * 
  * 	Parameters:
- * 		char command[] - the command
- * 		char* args[] - the command's arguments
+ * 		char* tokens[] - array of tokens
  */
-void executeCommand(char command[], char* args[])
+void executeCommand(char* tokens[], int num_tokens)
 {
+	// Local string vars
+	char prog_path[MAX_PATH_LENGTH] = "";
+
+	// Get the command and it's args
+	char* command = strdup(tokens[0]);
+	int num_args = num_tokens - 1;
+	char** argv = malloc( sizeof(char*) * num_tokens);
+	for (int i = 1; i < num_tokens; i++)
+		argv[i] = strdup(tokens[i+1]);
+	argv[num_tokens] = NULL;
 
 	// Exit condition
 	if(strcmp(command, "exit") == 0)
 		exit(0);
 
-	// Different command?
-	printf("The command is : %s\n", command);
+	// Check if built-in command
+	// if(strcmp(command, "cd") == 0)
+	// 	cd(tokens[1]);
+	// if(strcmp(command, "path") == 0)
+	// 	path(tokens);
 
+	// Check if program in path
+	int num_paths = 1;	// TODO: Make dynamic
+	for( int i=0; i < num_paths; i++)
+	{
+		// Build possible program path
+		strcpy(prog_path, BIN_PATHS[i]);
+		strcat(prog_path, "/");
+		strcat(prog_path, command);
+		printf("Trying to access %s\n", prog_path);
+
+		// Check if that program path exists
+		if( access(prog_path, X_OK) == 0 )
+		{
+			// Execute that program!
+			printf("Executing %s\n", prog_path);
+			pid_t pid = fork();
+			if( pid == 0 )
+			{
+				argv[0] = prog_path;
+				execv(prog_path, argv);
+			}
+			int status;
+			waitpid(pid, &status, 0);
+		}
+		else
+			continue;
+	}
 }
 
 
@@ -123,7 +142,9 @@ int main(int argc, char *argv[])
 		INPUT_FILE = stdin;
 	else
 		INPUT_FILE = fopen(argv[1], "r");
-		
+	
+	char* command = malloc( sizeof(char*) * (MAX_LINE_LENGTH) );
+	char** command_args = malloc( sizeof(char*) * (MAX_NUM_TOKENS) );
 
 	// Main shell loop
 	while (1)
@@ -131,25 +152,8 @@ int main(int argc, char *argv[])
 		// Get tokens from next line
 		char *tokens[MAX_NUM_TOKENS];
 		int num_tokens = getTokens(tokens);
-		// Parse tokens into valid command
-		char* command;
-		char* command_args[];
-
-
-		if(parseCommand(tokens, num_tokens, command, command_args))
-		{
-			// Execute that command
-			executeCommand(command, command_args);
-		}
-
-		
-
-		// // Display parsed tokens
-		// for (int i = 0; i < num_tokens; i++)
-		// {
-		// 	printf("%s ", tokens[i]);
-		// }
-		// printf("\n");
+		// Execute that tokenized command
+		executeCommand(tokens, num_tokens);
 	}
 	return 0;
 }
