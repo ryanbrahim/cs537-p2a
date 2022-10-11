@@ -9,6 +9,15 @@ void prompt()
 }
 
 /**
+ * Displays error message
+*/
+void error()
+{
+	char error_message[30] = "An error has occurred\n";
+    write(STDERR_FILENO, error_message, strlen(error_message)); 
+}
+
+/**
  * 	Gets a command from the user
  * 
  * 	Params:
@@ -70,10 +79,43 @@ int getTokens(char* tokens[])
 	tokens[i-1] = strsep(&tokens[i-1], "\n");
 	// Make null-terminated
 	if ( strlen(tokens[i-1]) == 0 )
+	{
 		tokens[i-1] = NULL;
+		i--;
+	}
 	else
 		tokens[i] = NULL;
 	return i;
+}
+
+/**
+ * cd build-in function.  Changes directory
+*/
+void cd(char* tokens[], int num_tokens)
+{
+	// Error checking
+	if (num_tokens != 2)
+		error();
+	// Valid command, change directory
+	else
+		chdir(strdup(tokens[1]));
+}
+
+
+/**
+ * Path built-in function.  Adds a new path directory
+ * 	to our list of paths.
+ * 
+ * 	Params:
+ * 		tokens[] - the command tokens
+ * 		int num_tokens - the number of tokens
+*/
+void path(char* tokens[], int num_tokens)
+{
+	int new_paths = num_tokens - 1;
+	for (int i = 0; i < new_paths; i++)
+		BIN_PATHS[i] = tokens[1+i]; 
+	NUM_PATHS = new_paths;
 }
 
 
@@ -90,25 +132,29 @@ void executeCommand(char* tokens[], int num_tokens)
 
 	// Get the command and it's args
 	char* command = strdup(tokens[0]);
-	int num_args = num_tokens - 1;
 	char** argv = malloc( sizeof(char*) * num_tokens + 1);
 	for (int i = 1; i < num_tokens; i++)
 		argv[i] = strdup(tokens[i]);
 	argv[num_tokens] = NULL;
 
-	// Exit condition
-	if(strcmp(command, "exit") == 0)
-		exit(0);
 
 	// Check if built-in command
-	// if(strcmp(command, "cd") == 0)
-	// 	cd(tokens[1]);
-	// if(strcmp(command, "path") == 0)
-	// 	path(tokens);
+	if(strcmp(command, "exit") == 0)
+		exit(0);
+	if(strcmp(command, "cd") == 0)
+	{
+		cd(tokens, num_tokens);
+		return;
+	}
+	if(strcmp(command, "path") == 0)
+	{
+		path(tokens, num_tokens);
+		return;
+	}
 
-	// Check if program in path
-	int num_paths = 1;	// TODO: Make dynamic
-	for( int i=0; i < num_paths; i++)
+
+	// Check if program command in path
+	for( int i=0; i < NUM_PATHS; i++)
 	{
 		// Build possible program path
 		strcpy(prog_path, BIN_PATHS[i]);
@@ -160,10 +206,12 @@ int main(int argc, char *argv[])
 		INPUT_FILE = stdin;
 	else
 		INPUT_FILE = fopen(argv[1], "r");
-	
-	char* command = malloc( sizeof(char*) * (MAX_LINE_LENGTH) );
-	char** command_args = malloc( sizeof(char*) * (MAX_NUM_TOKENS) );
 
+	// Intialize global variable for BIN_PATHS 
+	BIN_PATHS = malloc( sizeof(char*) * MAX_PATHS );
+	BIN_PATHS[0] = "/bin";
+	NUM_PATHS = 1;
+	
 	// Main shell loop
 	while (1)
 	{

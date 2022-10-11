@@ -16,22 +16,25 @@
 // Global Constants
 #define DEBUG true
 #define MAX_PATH_LENGTH 512
+#define MAX_PATHS 256
 const size_t MAX_LINE_LENGTH = 512;
 const int MAX_NUM_TOKENS = 512;
 const bool INTERACTIVE = true;
-char* BIN_PATHS[] = {"/bin"};
 
 // Global variables
 FILE* INPUT_FILE;
+int NUM_PATHS;
+char** BIN_PATHS;
 
 // Function headers
 void prompt(void);
 int getTokens(char* tokens[]);
 void executeCommand(char* tokens[], int num_tokens);
+void error();
 
 // Builtins
-void cd(char* new_dir);
-void path(char* tokens[]);
+void cd(char* tokens[], int num_tokens);
+void path(char* tokens[], int num_tokens);
 
 #endif
 

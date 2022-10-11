@@ -1,2 +1,2 @@
-ls a b c d e f g .
+cd 
 exit
