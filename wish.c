@@ -109,13 +109,15 @@ void executeCommand(char* tokens[], int num_tokens)
 		strcpy(prog_path, BIN_PATHS[i]);
 		strcat(prog_path, "/");
 		strcat(prog_path, command);
-		printf("Trying to access %s\n", prog_path);
+		if (DEBUG)
+			printf("Trying to access %s\n", prog_path);
 
 		// Check if that program path exists
 		if( access(prog_path, X_OK) == 0 )
 		{
 			// Execute that program!
-			printf("Executing %s\n", prog_path);
+			if (DEBUG)
+				printf("Executing %s\n", prog_path);
 			pid_t pid = fork();
 			if( pid == 0 )
 			{
