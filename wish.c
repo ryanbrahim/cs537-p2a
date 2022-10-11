@@ -68,6 +68,11 @@ int getTokens(char* tokens[])
 	}
 	// Remove newline character on last token
 	tokens[i-1] = strsep(&tokens[i-1], "\n");
+	// Make null-terminated
+	if ( strlen(tokens[i-1]) == 0 )
+		tokens[i-1] = NULL;
+	else
+		tokens[i] = NULL;
 	return i;
 }
 
@@ -86,9 +91,9 @@ void executeCommand(char* tokens[], int num_tokens)
 	// Get the command and it's args
 	char* command = strdup(tokens[0]);
 	int num_args = num_tokens - 1;
-	char** argv = malloc( sizeof(char*) * num_tokens);
+	char** argv = malloc( sizeof(char*) * num_tokens + 1);
 	for (int i = 1; i < num_tokens; i++)
-		argv[i] = strdup(tokens[i+1]);
+		argv[i] = strdup(tokens[i]);
 	argv[num_tokens] = NULL;
 
 	// Exit condition
@@ -109,19 +114,30 @@ void executeCommand(char* tokens[], int num_tokens)
 		strcpy(prog_path, BIN_PATHS[i]);
 		strcat(prog_path, "/");
 		strcat(prog_path, command);
-		if (DEBUG)
-			printf("Trying to access %s\n", prog_path);
+		argv[0] = prog_path;
+		// printf("Trying to access %s\n", prog_path);
 
 		// Check if that program path exists
 		if( access(prog_path, X_OK) == 0 )
 		{
+			// printf("Pre-executing %s\n", prog_path);
+			// printf("\targv =");
+			// for (int i = 0; i <= num_tokens; i++)
+					// printf(" %s", argv[i]);
+			// printf("\n");
+
 			// Execute that program!
-			if (DEBUG)
-				printf("Executing %s\n", prog_path);
+			// printf("Executing %s\n", prog_path);
+
 			pid_t pid = fork();
 			if( pid == 0 )
 			{
-				argv[0] = prog_path;
+				// printf("\tpid: %d\n", (int)pid);
+				// printf("\tprog_path: %s\n", prog_path);
+				// printf("\targv =");
+				// for (int i = 0; i <= num_tokens; i++)
+					// printf(" %s", argv[i]);
+				// printf("\n");
 				execv(prog_path, argv);
 			}
 			int status;
