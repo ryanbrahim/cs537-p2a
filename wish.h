@@ -20,6 +20,8 @@
 const size_t MAX_LINE_LENGTH = 512;
 const int MAX_NUM_TOKENS = 512;
 const bool INTERACTIVE = true;
+const char* op_tokens[] = {"==", "!="};
+const int op_tokenc = 2;
 
 typedef enum {
     EXIT,

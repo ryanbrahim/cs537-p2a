@@ -294,15 +294,40 @@ char* getRedirectFile(char* tokens[], int num_tokens)
 }
 
 
-int evalIfCondition(char* condition_args[], int condition_argc)
+/**
+ *  Finds the index of the boolean operator in an if condition.
+ * 
+ * 	Returns the index, or -1 if not found
+*/
+int findOpIndex(char* cond_args[], int cond_argc)
+{
+	int op_index = -1;
+	for (int i = 0; i < op_tokenc; i++)
+	{
+		op_index = find(cond_args, cond_argc, op_tokens[i]);
+		if (op_index != -1) break;
+	}
+	return op_index;
+}
+
+
+int evalIfCondition(char* cond_args[], int cond_argc)
 {
 	// Unpack args
-	char* left_operand = malloc( sizeof(char) * MAX_LINE_LENGTH );
+
+	// Find the operator index (need this to split condition)
+	int op_index = findOpIndex(cond_args, cond_argc);
+	// ERROR: No operator in condition
+	if (op_index == -1)
+		return -1;
+
+	// Parse the condition tokens
+	char* left_operand[MAX_NUM_TOKENS];
 	char* str_op = malloc( sizeof(char) * MAX_LINE_LENGTH );
 	char* right_operand = malloc( sizeof(char) * MAX_LINE_LENGTH );
-	left_operand = strdup(condition_args[0]);
-	str_op = strdup(condition_args[1]);
-	right_operand = strdup(condition_args[2]);
+	int left_operandc = splice(cond_args, cond_argc, left_operand, 0, op_index-1);
+	str_op = strdup(cond_args[op_index]);
+	right_operand = strdup(cond_args[op_index+1]);
 
 	// Define types of operators
 	typedef enum {
@@ -318,7 +343,7 @@ int evalIfCondition(char* condition_args[], int condition_argc)
 		op = NOT_EQUALS;
 
 	// Execute the left operand
-	int left_val = executeCommand(&left_operand, 1);
+	int left_val = executeCommand(left_operand, left_operandc);
 	int right_val = atoi(right_operand);
 
 	switch (op)
@@ -392,8 +417,9 @@ int executeCommand(char* tokens[], int num_tokens)
 			status = execProg(args, argc, redirect_file);
 			break;
 		case IF:
-			condition_argc = splice(tokens, num_tokens, condition_args, 1, 3);
-			then_argc = splice(tokens, num_tokens, then_args, 5, num_tokens-2);
+			int then_index = find(tokens, num_tokens, "then");
+			condition_argc = splice(tokens, num_tokens, condition_args, 1, then_index-1);
+			then_argc = splice(tokens, num_tokens, then_args, then_index+1, num_tokens-2);
 			if ( evalIfCondition(condition_args, condition_argc) )
 			{
 				status = executeCommand(then_args, then_argc);
