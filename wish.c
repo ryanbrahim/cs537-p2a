@@ -177,6 +177,16 @@ COMMAND_T determineCommand(char* tokens[], int num_tokens)
 		// Last token needs to be a "fi"
 		if ( strcmp(tokens[num_tokens-1], strdup("fi")) != 0 )
 			return ERROR;
+		// Needs a "then"
+		int then_index = find(tokens, num_tokens, "then");
+		if (then_index == -1)
+			return ERROR;
+		// Needs a valid operator in condition
+		char* cond_args[MAX_NUM_TOKENS];
+		int cond_argc = splice(tokens, num_tokens, cond_args, 1, then_index-1);
+		int op_index = findOpIndex(cond_args, cond_argc);
+		if ( op_index == -1 )
+			return ERROR;
 		return IF;
 	}
 	// Redirect?
@@ -316,7 +326,7 @@ int findOpIndex(char* cond_args[], int cond_argc)
 }
 
 
-int evalIfCondition(char* cond_args[], int cond_argc)
+bool evalIfCondition(char* cond_args[], int cond_argc)
 {
 	// Unpack args
 
@@ -324,7 +334,7 @@ int evalIfCondition(char* cond_args[], int cond_argc)
 	int op_index = findOpIndex(cond_args, cond_argc);
 	// ERROR: No operator in condition
 	if (op_index == -1)
-		return -1;
+		return false;
 
 	// Parse the condition tokens
 	char* left_operand[MAX_NUM_TOKENS];
@@ -361,7 +371,7 @@ int evalIfCondition(char* cond_args[], int cond_argc)
 			return left_val != right_val;
 			break;
 	}
-	return 0;
+	return true;
 }
 
 

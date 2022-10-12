@@ -52,7 +52,7 @@ char* findProgPath(char* args[], int argc);
 // Command handlers
 int executeCommand(char* tokens[], int num_tokens);
 int execProg(char* tokens[], int num_tokens, char* redirect_file);
-int evalIfCondition(char* condition_args[], int condition_argc);
+bool evalIfCondition(char* condition_args[], int condition_argc);
 
 // Builtins
 int builtinExit(char* tokens[], int num_tokens);
