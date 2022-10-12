@@ -177,9 +177,6 @@ COMMAND_T determineCommand(char* tokens[], int num_tokens)
 		// Last token needs to be a "fi"
 		if ( strcmp(tokens[num_tokens-1], strdup("fi")) != 0 )
 			return ERROR;
-		// Are there args in the "then" portion?
-		if ( find(tokens, num_tokens, "then")+1 >= num_tokens-1 )
-			return ERROR;
 		return IF;
 	}
 	// Redirect?
@@ -376,6 +373,10 @@ int evalIfCondition(char* cond_args[], int cond_argc)
  */
 int executeCommand(char* tokens[], int num_tokens)
 {
+	// Don't bother executing nothing lol
+	if ( num_tokens <= 0 )
+		return 0;
+
 	// Determine what kind of command this is
 	COMMAND_T command = determineCommand(tokens, num_tokens);
 
