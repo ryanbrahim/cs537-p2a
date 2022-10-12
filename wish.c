@@ -15,7 +15,7 @@
 #include <fcntl.h>
 
 // Global Constants
-#define DEBUG true
+#define DEBUG false
 #define MAX_PATH_LENGTH 512
 #define MAX_PATHS 256
 const size_t MAX_LINE_LENGTH = 512;
