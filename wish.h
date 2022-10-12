@@ -42,9 +42,9 @@ int getTokens(char* tokens[]);
 void error();
 int handleRedirect(char* tokens[], int num_tokens, int redirect_index);
 COMMAND_T determineCommand(char* tokens[], int num_tokens);
-int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int final_index);
-int findRedirect(char* tokens[], int num_tokens);
-char* getRedirect(char* tokens[], int num_tokens);
+int splice(char* tokens[], int num_tokens, char* args[], int start_index, int final_index);
+int find(char* tokens[], int num_tokens, char* search);
+char* getRedirectFile(char* tokens[], int num_tokens);
 char* findProgPath(char* args[], int argc);
 
 // Command handlers

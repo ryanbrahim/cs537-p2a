@@ -186,7 +186,7 @@ COMMAND_T determineCommand(char* tokens[], int num_tokens)
 }
 
 
-int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int final_index)
+int splice(char* tokens[], int num_tokens, char* args[], int start_index, int final_index)
 {	
 	if (final_index >= num_tokens-1)
 		final_index = num_tokens-1;
@@ -267,25 +267,26 @@ int execProg(char* args[], int argc, char* redirect_file)
  * 	Param:
  * 		char* tokens[]
  * 		int num_tokens
+ * 		char* search - token to search for
  * 
  * 	Returns:
- * 		Index of ">", -1 if not found
+ * 		Index of search, -1 if not found
 */
-int findRedirect(char* tokens[], int num_tokens)
+int find(char* tokens[], int num_tokens, char* search)
 {
 	for (int i = 0; i < num_tokens; i++)
 	{
 		char* token = tokens[i];
-		if ( strcmp(token, strdup(">")) == 0 )
+		if ( strcmp(token, strdup(search)) == 0 )
 			return i;
 	}
 	return -1;
 }
 
 
-char* getRedirect(char* tokens[], int num_tokens)
+char* getRedirectFile(char* tokens[], int num_tokens)
 {
-	int redirect_index = findRedirect(tokens, num_tokens);
+	int redirect_index = find(tokens, num_tokens, ">");
 	// Single redirect file NEEDS to be immediately after redirect
 	if (redirect_index + 1 == num_tokens - 1)
 		return strdup(tokens[redirect_index+1]);
@@ -375,19 +376,19 @@ int executeCommand(char* tokens[], int num_tokens)
 				error();
 			break;
 		case PROGRAM:
-			argc = buildArgs(tokens, num_tokens, args, 0, num_tokens-1);
+			argc = splice(tokens, num_tokens, args, 0, num_tokens-1);
 			status = execProg(args, argc, NULL);
 			break;
 		case REDIRECT:
-			int redirect_index = findRedirect(tokens, num_tokens);
-			char* redirect_file = getRedirect(tokens, num_tokens);
+			int redirect_index = find(tokens, num_tokens, ">");
+			char* redirect_file = getRedirectFile(tokens, num_tokens);
 			if (redirect_file == NULL) break;
-			argc = buildArgs(tokens, num_tokens, args, 0, redirect_index-1);
+			argc = splice(tokens, num_tokens, args, 0, redirect_index-1);
 			status = execProg(args, argc, redirect_file);
 			break;
 		case IF:
-			condition_argc = buildArgs(tokens, num_tokens, condition_args, 1, 3);
-			then_argc = buildArgs(tokens, num_tokens, then_args, 5, num_tokens-2);
+			condition_argc = splice(tokens, num_tokens, condition_args, 1, 3);
+			then_argc = splice(tokens, num_tokens, then_args, 5, num_tokens-2);
 			if ( evalIfCondition(condition_args, condition_argc) )
 			{
 				status = executeCommand(then_args, then_argc);
