@@ -6,3 +6,7 @@ wish: $(SOURCES) $(HEADERS)
 
 test: wish
 	~cs537-1/tests/p2a/test-wish.sh
+
+test-all: wish
+	~cs537-1/tests/p2a/test-wish.sh -c
+
