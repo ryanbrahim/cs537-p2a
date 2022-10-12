@@ -382,7 +382,12 @@ int executeCommand(char* tokens[], int num_tokens)
 		case REDIRECT:
 			int redirect_index = find(tokens, num_tokens, ">");
 			char* redirect_file = getRedirectFile(tokens, num_tokens);
-			if (redirect_file == NULL) break;
+			if (redirect_file == NULL)
+			{
+				status = -1;
+				error();
+				break;
+			}
 			argc = splice(tokens, num_tokens, args, 0, redirect_index-1);
 			status = execProg(args, argc, redirect_file);
 			break;
