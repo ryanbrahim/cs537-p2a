@@ -94,20 +94,20 @@ int getTokens(char* tokens[])
 /**
  * 	exit built-in
 */
-bool builtinExit(char* tokens[], int num_tokens)
+int builtinExit(char* tokens[], int num_tokens)
 {
 	if(num_tokens > 1)
 		return false;
 	else	
 		exit(0);
-	return true;
+	return 0;
 }
 
 
 /**
  * cd build-in function.  Changes directory
 */
-bool builtinCd(char* tokens[], int num_tokens)
+int builtinCd(char* tokens[], int num_tokens)
 {
 	// Error checking
 	if (num_tokens != 2)
@@ -115,7 +115,7 @@ bool builtinCd(char* tokens[], int num_tokens)
 	// Valid command, change directory
 	else
 		chdir(strdup(tokens[1]));
-	return true;
+	return 0;
 }
 
 
@@ -127,13 +127,13 @@ bool builtinCd(char* tokens[], int num_tokens)
  * 		tokens[] - the command tokens
  * 		int num_tokens - the number of tokens
 */
-bool builtinPath(char* tokens[], int num_tokens)
+int builtinPath(char* tokens[], int num_tokens)
 {
 	int new_paths = num_tokens - 1;
 	for (int i = 0; i < new_paths; i++)
 		BIN_PATHS[i] = tokens[1+i]; 
 	NUM_PATHS = new_paths;
-	return true;
+	return 0;
 }
 
 
@@ -144,20 +144,20 @@ bool builtinPath(char* tokens[], int num_tokens)
  * 
  * 	Returns true if handled, false if not
 */
-bool handleRedirect(char* tokens[], int num_tokens, int redirect_index)
+int handleRedirect(char* tokens[], int num_tokens, int redirect_index)
 {
 	// ERROR: Trying to redirect, but no (or too many) output file given
 	if ( redirect_index + 1 != num_tokens - 1 )
 	{
 		error();
-		return false;
+		return 1;
 	}
 
 	char* output_file = tokens[redirect_index+1];
 	int fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     dup2(fd, fileno(stdout));
     close(fd);  
-	return true;
+	return 0;
 }
 
 
@@ -231,7 +231,7 @@ char* findProgPath(char* args[], int argc)
 /**
  *  Execute a program with the given args.
 */
-bool execProg(char* args[], int argc, char* redirect_file)
+int execProg(char* args[], int argc, char* redirect_file)
 {
 	// Get a valid program path
 	char* prog_path = findProgPath(args, argc);
@@ -253,7 +253,8 @@ bool execProg(char* args[], int argc, char* redirect_file)
 	int status;
 	waitpid(pid, &status, 0);
 	// Successfully ran program!  We can return now
-	return true;
+	int rc = WEXITSTATUS(status);
+	return rc;
 }
 
 
@@ -289,7 +290,7 @@ char* getRedirect(char* tokens[], int num_tokens)
 }
 
 
-bool evalIfCondition(char* condition_args[], int condition_argc)
+int evalIfCondition(char* condition_args[], int condition_argc)
 {
 	// Unpack args
 	char* left_operand = malloc( sizeof(char) * MAX_LINE_LENGTH );
@@ -312,17 +313,21 @@ bool evalIfCondition(char* condition_args[], int condition_argc)
 	else if ( strcmp( str_op, strdup("!=") ) == 0 )
 		op = NOT_EQUALS;
 
+	// Execute the left operand
+	int left_val = executeCommand(&left_operand, 1);
+	int right_val = atoi(right_operand);
+
 	switch (op)
 	{
 		case EQUALS:
-			return strcmp( left_operand, right_operand ) == 0;
+			return left_val == right_val;
 			break;
 
 		case NOT_EQUALS:
-			return strcmp( left_operand, right_operand ) != 0;
+			return left_val != right_val;
 			break;
 	}
-	
+	return 0;
 }
 
 
@@ -332,7 +337,7 @@ bool evalIfCondition(char* condition_args[], int condition_argc)
  * 	Parameters:
  * 		char* tokens[] - array of tokens
  */
-void executeCommand(char* tokens[], int num_tokens)
+int executeCommand(char* tokens[], int num_tokens)
 {
 	// Determine what kind of command this is
 	COMMAND_T command = determineCommand(tokens, num_tokens);
@@ -348,48 +353,42 @@ void executeCommand(char* tokens[], int num_tokens)
 	int then_argc = 0;
 
 	// Process command
-	bool success = false;
+	int status = -1;
 	switch (command)
 	{
 		case EXIT:
-			success = builtinExit(tokens, num_tokens);
+			status = builtinExit(tokens, num_tokens);
 			break;
 		case CD:
-			success = builtinCd(tokens, num_tokens);
+			status = builtinCd(tokens, num_tokens);
 			break;
 		case PATH:
-			success = builtinPath(tokens, num_tokens);
+			status = builtinPath(tokens, num_tokens);
 			break;
 		case PROGRAM:
 			argc = buildArgs(tokens, num_tokens, args, 0, num_tokens-1);
-			success = execProg(args, argc, NULL);
+			status = execProg(args, argc, NULL);
 			break;
 		case REDIRECT:
 			int redirect_index = findRedirect(tokens, num_tokens);
 			char* redirect_file = getRedirect(tokens, num_tokens);
 			if (redirect_file == NULL) break;
 			argc = buildArgs(tokens, num_tokens, args, 0, redirect_index-1);
-			success = execProg(args, argc, redirect_file);
+			status = execProg(args, argc, redirect_file);
 			break;
 		case IF:
-			printf("Beginning IF:\n");
 			condition_argc = buildArgs(tokens, num_tokens, condition_args, 1, 3);
 			then_argc = buildArgs(tokens, num_tokens, then_args, 5, num_tokens-2);
 			if ( evalIfCondition(condition_args, condition_argc) )
 			{
-				printf("If evaluated to true!");
-			}
-			else
-			{
-				printf("If evaluated to false!");
+				status = executeCommand(then_args, then_argc);
 			}
 			break;
 		case ERROR:
 			break;
 	}
 	// Error?
-	if (!success)
-		error();
+	return status;
 }
 
 
@@ -425,7 +424,12 @@ int main(int argc, char *argv[])
 		int num_tokens = getTokens(tokens);
 		// Execute that tokenized command
 		if (num_tokens >= 1)
-			executeCommand(tokens, num_tokens);
+		{
+			int status = executeCommand(tokens, num_tokens);
+			if (status != 0)
+				error();
+		}
+			
 	}
 	return 0;
 }

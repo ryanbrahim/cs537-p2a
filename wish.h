@@ -40,7 +40,7 @@ char** BIN_PATHS;
 void prompt(void);
 int getTokens(char* tokens[]);
 void error();
-bool handleRedirect(char* tokens[], int num_tokens, int redirect_index);
+int handleRedirect(char* tokens[], int num_tokens, int redirect_index);
 COMMAND_T determineCommand(char* tokens[], int num_tokens);
 int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int final_index);
 int findRedirect(char* tokens[], int num_tokens);
@@ -48,14 +48,14 @@ char* getRedirect(char* tokens[], int num_tokens);
 char* findProgPath(char* args[], int argc);
 
 // Command handlers
-void executeCommand(char* tokens[], int num_tokens);
-bool execProg(char* tokens[], int num_tokens, char* redirect_file);
-bool evalIfCondition(char* condition_args[], int condition_argc);
+int executeCommand(char* tokens[], int num_tokens);
+int execProg(char* tokens[], int num_tokens, char* redirect_file);
+int evalIfCondition(char* condition_args[], int condition_argc);
 
 // Builtins
-bool builtinExit(char* tokens[], int num_tokens);
-bool builtinCd(char* tokens[], int num_tokens);
-bool builtinPath(char* tokens[], int num_tokens);
+int builtinExit(char* tokens[], int num_tokens);
+int builtinCd(char* tokens[], int num_tokens);
+int builtinPath(char* tokens[], int num_tokens);
 
 #endif
 
