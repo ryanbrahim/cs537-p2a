@@ -97,7 +97,7 @@ int getTokens(char* tokens[])
 int builtinExit(char* tokens[], int num_tokens)
 {
 	if(num_tokens > 1)
-		return false;
+		return 1;
 	else	
 		exit(0);
 	return 0;
@@ -111,7 +111,7 @@ int builtinCd(char* tokens[], int num_tokens)
 {
 	// Error checking
 	if (num_tokens != 2)
-		return false;
+		return 1;
 	// Valid command, change directory
 	else
 		chdir(strdup(tokens[1]));
@@ -358,12 +358,18 @@ int executeCommand(char* tokens[], int num_tokens)
 	{
 		case EXIT:
 			status = builtinExit(tokens, num_tokens);
+			if (status != 0)
+				error();
 			break;
 		case CD:
 			status = builtinCd(tokens, num_tokens);
+			if (status != 0)
+				error();
 			break;
 		case PATH:
 			status = builtinPath(tokens, num_tokens);
+			if (status != 0)
+				error();
 			break;
 		case PROGRAM:
 			argc = buildArgs(tokens, num_tokens, args, 0, num_tokens-1);
@@ -382,12 +388,13 @@ int executeCommand(char* tokens[], int num_tokens)
 			if ( evalIfCondition(condition_args, condition_argc) )
 			{
 				status = executeCommand(then_args, then_argc);
+				if (status != 0)
+					error();
 			}
 			break;
 		case ERROR:
 			break;
 	}
-	// Error?
 	return status;
 }
 
@@ -426,8 +433,6 @@ int main(int argc, char *argv[])
 		if (num_tokens >= 1)
 		{
 			int status = executeCommand(tokens, num_tokens);
-			if (status != 0)
-				error();
 		}
 			
 	}
