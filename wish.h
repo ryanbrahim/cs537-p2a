@@ -50,6 +50,7 @@ char* findProgPath(char* args[], int argc);
 // Command handlers
 void executeCommand(char* tokens[], int num_tokens);
 bool execProg(char* tokens[], int num_tokens, char* redirect_file);
+bool evalIfCondition(char* condition_args[], int condition_argc);
 
 // Builtins
 bool builtinExit(char* tokens[], int num_tokens);

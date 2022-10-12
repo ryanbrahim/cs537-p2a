@@ -192,9 +192,9 @@ int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int
 		final_index = num_tokens-1;
 
 	int argc = 0;
-	for (int i = 0; i <= final_index; i++)
+	for (int i = 0; i < final_index-start_index+1; i++)
 	{
-		char* token = strdup(tokens[i]);
+		char* token = strdup(tokens[start_index + i]);
 		args[i] = token;
 		argc++;
 	}
@@ -289,6 +289,43 @@ char* getRedirect(char* tokens[], int num_tokens)
 }
 
 
+bool evalIfCondition(char* condition_args[], int condition_argc)
+{
+	// Unpack args
+	char* left_operand = malloc( sizeof(char) * MAX_LINE_LENGTH );
+	char* str_op = malloc( sizeof(char) * MAX_LINE_LENGTH );
+	char* right_operand = malloc( sizeof(char) * MAX_LINE_LENGTH );
+	left_operand = strdup(condition_args[0]);
+	str_op = strdup(condition_args[1]);
+	right_operand = strdup(condition_args[2]);
+
+	// Define types of operators
+	typedef enum {
+		EQUALS,
+		NOT_EQUALS
+	} op_t;
+
+	// Translate str_op into the enum type
+	op_t op;
+	if ( strcmp( str_op, strdup("==") ) == 0 )
+		op = EQUALS;
+	else if ( strcmp( str_op, strdup("!=") ) == 0 )
+		op = NOT_EQUALS;
+
+	switch (op)
+	{
+		case EQUALS:
+			return strcmp( left_operand, right_operand ) == 0;
+			break;
+
+		case NOT_EQUALS:
+			return strcmp( left_operand, right_operand ) != 0;
+			break;
+	}
+	
+}
+
+
 /**
  * 	Execute a command.
  * 
@@ -303,6 +340,12 @@ void executeCommand(char* tokens[], int num_tokens)
 	// Allocate space for args
 	char* args[MAX_NUM_TOKENS];
 	int argc = 0;
+
+	// Allocate space for IF args
+	char* condition_args[MAX_NUM_TOKENS];
+	int condition_argc = 0;
+	char* then_args[MAX_NUM_TOKENS];
+	int then_argc = 0;
 
 	// Process command
 	bool success = false;
@@ -329,6 +372,17 @@ void executeCommand(char* tokens[], int num_tokens)
 			success = execProg(args, argc, redirect_file);
 			break;
 		case IF:
+			printf("Beginning IF:\n");
+			condition_argc = buildArgs(tokens, num_tokens, condition_args, 1, 3);
+			then_argc = buildArgs(tokens, num_tokens, then_args, 5, num_tokens-2);
+			if ( evalIfCondition(condition_args, condition_argc) )
+			{
+				printf("If evaluated to true!");
+			}
+			else
+			{
+				printf("If evaluated to false!");
+			}
 			break;
 		case ERROR:
 			break;
