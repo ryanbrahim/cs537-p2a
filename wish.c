@@ -422,10 +422,9 @@ int executeCommand(char* tokens[], int num_tokens)
 			then_argc = splice(tokens, num_tokens, then_args, then_index+1, num_tokens-2);
 			if ( evalIfCondition(condition_args, condition_argc) )
 			{
-				status = executeCommand(then_args, then_argc);
-				if (status != 0)
-					error();
+				executeCommand(then_args, then_argc);
 			}
+			status = 0;	// If executed successfully!
 			break;
 		case ERROR:
 			error();
