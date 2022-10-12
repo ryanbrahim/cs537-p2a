@@ -92,26 +92,28 @@ int getTokens(char* tokens[])
 /**
  * 	exit built-in
 */
-builtin_exit(char* tokens[], int num_tokens)
+bool builtinExit(char* tokens[], int num_tokens)
 {
 	if(num_tokens > 1)
-		error();
+		return false;
 	else	
 		exit(0);
+	return true;
 }
 
 
 /**
  * cd build-in function.  Changes directory
 */
-void builtin_cd(char* tokens[], int num_tokens)
+bool builtinCd(char* tokens[], int num_tokens)
 {
 	// Error checking
 	if (num_tokens != 2)
-		error();
+		return false;
 	// Valid command, change directory
 	else
 		chdir(strdup(tokens[1]));
+	return true;
 }
 
 
@@ -123,12 +125,13 @@ void builtin_cd(char* tokens[], int num_tokens)
  * 		tokens[] - the command tokens
  * 		int num_tokens - the number of tokens
 */
-void builtin_path(char* tokens[], int num_tokens)
+bool builtinPath(char* tokens[], int num_tokens)
 {
 	int new_paths = num_tokens - 1;
 	for (int i = 0; i < new_paths; i++)
 		BIN_PATHS[i] = tokens[1+i]; 
 	NUM_PATHS = new_paths;
+	return true;
 }
 
 
@@ -159,14 +162,128 @@ bool handleRedirect(char* tokens[], int num_tokens, int redirect_index)
 COMMAND_T determineCommand(char* tokens[], int num_tokens)
 {
 	char* command = tokens[0];
-	if ( strcmp(command,strdup("exit")) == 0 
-			|| strcmp(command,strdup("cd")) == 0 
-			|| strcmp(command,strdup("path")) == 0 )
+	// Built-in?
+	if ( strcmp(command,strdup("exit")) == 0 )
+		return EXIT;
+	if ( strcmp(command,strdup("cd")) == 0 )
+		return CD;
+	if ( strcmp(command,strdup("path")) == 0 )
+		return PATH;
+	// If statement?
+	if ( strcmp(command,strdup("if")) == 0 )
+		return IF;
+	// Redirect?
+	for (int i = 0; i < num_tokens; i++)
 	{
-		return BUILTIN;
+		char* token = strdup(tokens[i]);
+		if( strcmp(token, strdup(">")) == 0 )
+			return (i != 0) ? REDIRECT : ERROR;
 	}
+	// Not any of the above, must be a program
+	return PROGRAM;
+}
 
-	
+
+int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int final_index)
+{	
+	if (final_index >= num_tokens-1)
+		final_index = num_tokens-1;
+
+	int argc = 0;
+	for (int i = 0; i <= final_index; i++)
+	{
+		char* token = strdup(tokens[i]);
+		args[i] = token;
+		argc++;
+	}
+	args[argc] = NULL;
+
+	// return the number of arguments in arg
+	return argc;
+}
+
+
+char* findProgPath(char* args[], int argc)
+{
+// Find program's path
+	char* prog_path = malloc( sizeof(char) * MAX_PATH_LENGTH );
+	char* prog = strdup(args[0]);
+	for( int i=0; i < NUM_PATHS; i++)
+	{
+		// Build possible program path
+		strcpy(prog_path, BIN_PATHS[i]);
+		strcat(prog_path, "/");
+		strcat(prog_path, prog);
+
+		// Check if that program path exists
+		if( access(prog_path, X_OK) == 0 )
+			return strdup(prog_path);
+		else
+			continue;
+	}
+	// Exhausted all paths, fail
+	return NULL;
+}
+
+
+/**
+ *  Execute a program with the given args.
+*/
+bool execProg(char* args[], int argc, char* redirect_file)
+{
+	// Get a valid program path
+	char* prog_path = findProgPath(args, argc);
+	if (prog_path == NULL)
+		return false;
+	// Create new process to execute program
+	pid_t pid = fork();
+	if( pid == 0 )
+	{
+		// Redirect stdout if needed
+		if(redirect_file != NULL)
+		{
+			int fd = open(redirect_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    		dup2(fd, fileno(stdout));
+    		close(fd);
+		}
+		execv(prog_path, args);
+	}
+	int status;
+	waitpid(pid, &status, 0);
+	// Successfully ran program!  We can return now
+	return true;
+}
+
+
+/**
+ *  Find the index of the redirect character ">".
+ * 
+ * 	Param:
+ * 		char* tokens[]
+ * 		int num_tokens
+ * 
+ * 	Returns:
+ * 		Index of ">", -1 if not found
+*/
+int findRedirect(char* tokens[], int num_tokens)
+{
+	for (int i = 0; i < num_tokens; i++)
+	{
+		char* token = tokens[i];
+		if ( strcmp(token, strdup(">")) == 0 )
+			return i;
+	}
+	return -1;
+}
+
+
+char* getRedirect(char* tokens[], int num_tokens)
+{
+	int redirect_index = findRedirect(tokens, num_tokens);
+	// Single redirect file NEEDS to be immediately after redirect
+	if (redirect_index + 1 == num_tokens - 1)
+		return strdup(tokens[redirect_index+1]);
+	return NULL;
 }
 
 
@@ -178,82 +295,45 @@ COMMAND_T determineCommand(char* tokens[], int num_tokens)
  */
 void executeCommand(char* tokens[], int num_tokens)
 {
-	// Local string vars
-	// char prog_path[MAX_PATH_LENGTH] = "";
-	char* prog_path = malloc( sizeof(char) * MAX_PATH_LENGTH );
+	// Determine what kind of command this is
+	COMMAND_T command = determineCommand(tokens, num_tokens);
 
-	// Get the command and it's args
-	char* command = strdup(tokens[0]);
-	char** argv = malloc( sizeof(char*) * num_tokens + 1);
-	argv[0] = command;
-	int argc = 1;
-	bool is_redirect = false;
-	for (int i = 1; i < num_tokens; i++)
+	// Allocate space for args
+	char* args[MAX_NUM_TOKENS];
+	int argc = 0;
+
+	// Process command
+	bool success = false;
+	switch (command)
 	{
-		char* token = strdup(tokens[i]);
-		// If we hit a redirect, handle redirect, and stop reading args
-		if ( strcmp(token, strdup(">")) == 0 )
-		{
-			is_redirect = true;
-			if (!handleRedirect(tokens, num_tokens, i))
-				return;
+		case EXIT:
+			success = builtinExit(tokens, num_tokens);
 			break;
-		}
-		// Add this token to the command args
-		argv[i] = token;
-		argc++;
+		case CD:
+			success = builtinCd(tokens, num_tokens);
+			break;
+		case PATH:
+			success = builtinPath(tokens, num_tokens);
+			break;
+		case PROGRAM:
+			argc = buildArgs(tokens, num_tokens, args, 0, num_tokens-1);
+			success = execProg(args, argc, NULL);
+			break;
+		case REDIRECT:
+			int redirect_index = findRedirect(tokens, num_tokens);
+			char* redirect_file = getRedirect(tokens, num_tokens);
+			if (redirect_file == NULL) break;
+			argc = buildArgs(tokens, num_tokens, args, 0, redirect_index-1);
+			success = execProg(args, argc, redirect_file);
+			break;
+		case IF:
+			break;
+		case ERROR:
+			break;
 	}
-	argv[argc] = NULL;
-
-
-	// Check if built-in command
-	if(strcmp(command, "exit") == 0)
-	{
-		builtin_exit(tokens, num_tokens);
-		return;
-	}
-	if(strcmp(command, "cd") == 0)
-	{
-		builtin_cd(tokens, num_tokens);
-		return;
-	}
-	if(strcmp(command, "path") == 0)
-	{
-		builtin_path(tokens, num_tokens);
-		return;
-	}
-
-
-	// Check if program command in path
-	for( int i=0; i < NUM_PATHS; i++)
-	{
-		// Build possible program path
-		strcpy(prog_path, BIN_PATHS[i]);
-		strcat(prog_path, "/");
-		strcat(prog_path, command);
-		// argv[0] = prog_path;
-		// printf("Trying to access %s\n", prog_path);
-
-		// Check if that program path exists
-		if( access(prog_path, X_OK) == 0 )
-		{
-			pid_t pid = fork();
-			if( pid == 0 )
-			{
-				if(is_redirect)
-					handleRedirect;
-				execv(prog_path, argv);
-			}
-			int status;
-			waitpid(pid, &status, 0);
-			// Successfully ran program!  We can return now
-			return;
-		}
-		else
-			continue;
-	}
-	// Could not find program, error
-	error();
+	// Error?
+	if (!success)
+		error();
 }
 
 

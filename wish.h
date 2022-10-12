@@ -22,10 +22,13 @@ const int MAX_NUM_TOKENS = 512;
 const bool INTERACTIVE = true;
 
 typedef enum {
-    BUILTIN,
-    COMMAND,
+    EXIT,
+    CD,
+    PATH,
+    PROGRAM,
     REDIRECT,
-    IF
+    IF,
+    ERROR
 } COMMAND_T;
 
 // Global variables
@@ -33,15 +36,25 @@ FILE* INPUT_FILE;
 int NUM_PATHS;
 char** BIN_PATHS;
 
-// Function headers
+// Helper functions
 void prompt(void);
 int getTokens(char* tokens[]);
-void executeCommand(char* tokens[], int num_tokens);
 void error();
+bool handleRedirect(char* tokens[], int num_tokens, int redirect_index);
+COMMAND_T determineCommand(char* tokens[], int num_tokens);
+int buildArgs(char* tokens[], int num_tokens, char* args[], int start_index, int final_index);
+int findRedirect(char* tokens[], int num_tokens);
+char* getRedirect(char* tokens[], int num_tokens);
+char* findProgPath(char* args[], int argc);
+
+// Command handlers
+void executeCommand(char* tokens[], int num_tokens);
+bool execProg(char* tokens[], int num_tokens, char* redirect_file);
 
 // Builtins
-void builtin_cd(char* tokens[], int num_tokens);
-void builtin_path(char* tokens[], int num_tokens);
+bool builtinExit(char* tokens[], int num_tokens);
+bool builtinCd(char* tokens[], int num_tokens);
+bool builtinPath(char* tokens[], int num_tokens);
 
 #endif
 
