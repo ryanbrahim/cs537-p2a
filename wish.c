@@ -402,6 +402,8 @@ int executeCommand(char* tokens[], int num_tokens)
 			}
 			break;
 		case ERROR:
+			error();
+			status = -1;
 			break;
 	}
 	return status;
