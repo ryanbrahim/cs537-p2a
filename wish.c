@@ -173,7 +173,12 @@ COMMAND_T determineCommand(char* tokens[], int num_tokens)
 		return PATH;
 	// If statement?
 	if ( strcmp(command,strdup("if")) == 0 )
+	{
+		// Last token needs to be a "fi"
+		if ( strcmp(tokens[num_tokens-1], strdup("fi")) != 0 )
+			return ERROR;
 		return IF;
+	}
 	// Redirect?
 	for (int i = 0; i < num_tokens; i++)
 	{
