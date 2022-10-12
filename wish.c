@@ -48,7 +48,7 @@ int getTokens(char* tokens[])
 	char* token = NULL;
 	// char* to_process = strdup(line);
 	int i = 0;
-	while ( (token = strsep(&line, " ")) != NULL)
+	while ( (token = strsep(&line, " \t\n")) != NULL)
 	{
 		// Check if we need to split a pipe
 		char* ptr_cmp = strchr(token, '>');
@@ -68,6 +68,8 @@ int getTokens(char* tokens[])
 				i++;
 			}
 		}
+		// Empty line, skip it
+		else if ( strcmp(token, strdup("")) == 0 ) {}
 		// No pipe to split, this is a clean token
 		else
 		{
@@ -76,9 +78,9 @@ int getTokens(char* tokens[])
 		}
 	}
 	// Remove newline character on last token
-	tokens[i-1] = strsep(&tokens[i-1], "\n");
+	// tokens[i-1] = strsep(&tokens[i-1], "\n");
 	// Make null-terminated
-	if ( strlen(tokens[i-1]) == 0 )
+	if ( i > 0 && strlen(tokens[i-1]) == 0 )
 	{
 		tokens[i-1] = NULL;
 		i--;
@@ -368,7 +370,8 @@ int main(int argc, char *argv[])
 		char *tokens[MAX_NUM_TOKENS];
 		int num_tokens = getTokens(tokens);
 		// Execute that tokenized command
-		executeCommand(tokens, num_tokens);
+		if (num_tokens >= 1)
+			executeCommand(tokens, num_tokens);
 	}
 	return 0;
 }
