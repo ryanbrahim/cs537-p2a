@@ -236,7 +236,10 @@ int execProg(char* args[], int argc, char* redirect_file)
 	// Get a valid program path
 	char* prog_path = findProgPath(args, argc);
 	if (prog_path == NULL)
-		return false;
+	{
+		error();
+		return -1;
+	}
 	// Create new process to execute program
 	pid_t pid = fork();
 	if( pid == 0 )
