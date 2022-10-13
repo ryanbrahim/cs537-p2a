@@ -1,11 +1,11 @@
-# CS537 Project 2b
+# wish - Wisconsin Shell
 
-This is a CLI shell called wish.
+This is a homemade command line shell for Unix-like systems.
 
-To use wish, first compile it:
+To use wish, first compile the source by running the Makefile
 
 ```
-gcc wish.c -o wish
+make
 ```
 
 Then, run the output
@@ -14,7 +14,7 @@ Then, run the output
 ./wish
 ```
 
-Then you should see the wish prompt:
+Finally, this should produce the wish prompt
 
 ```
 wish>
@@ -27,5 +27,9 @@ Now you can begin executing commands.
 The provided tests are found in `~cs537-1/tests/p2a`.  We can run the test script by running:
 ```
 ./test-wish.sh
+```
+Or we can run them using the make file like so
+```
+make test
 ```
 
